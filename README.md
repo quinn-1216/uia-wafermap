@@ -18,12 +18,7 @@ npm install -g rollup
 npm install
 ```
 
-3. Test the project.
-```
-npm run test
-```
-
-4. Build the project and output the result to __dist/uia-wafermap.js__.
+3. Build the project and output the result to __dist/uia-wafermap.js__.
 ```
 npm run build
 ```
@@ -81,7 +76,7 @@ function layerData(row, col) {              // information of a die
 
 The output:
 
-![example1](example1.png)
+![example1](test/pages/example1.png)
 
 ### Example3
 Use blue to identify __good to bad__ test results.
@@ -110,7 +105,7 @@ var shotmap = uia.shotmap('wafer2')
 
 The output:
 
-![example3](example3.png)
+![example3](test/pages/example3.png)
 
 
 ### Example5
@@ -149,29 +144,6 @@ result.draw(canvas);
 ```
 
 
-The output:
-
-![example5-1](example5-1.png)
-
-![example5-2](example5-2.png)
-
-
-## Documentation
-
-### ShotMap
-
-* __attachClick__ (_function_ clickHandler)
-
-  ```js
-  pickerFunc = function({
-    source: Die,
-    data: WaferData,
-    pick: function()
-  }) {
-
-  }
-  ```
-
 * __blocking__ (_int_ blur = 9, _int_ bg = null)
   * The blur argument of OpenCV.js.
   * The background color, ex: 0x00ff00. 
@@ -185,6 +157,7 @@ The output:
   The __pickMode__ is one of `testing` and `counting`.
   * testing - check if a die is pass or not.
   * counting - count the failure of number.
+  * bincode - bincode tracing.
 
 * __dieRect__ (_boolean_ enabled)
 
@@ -220,8 +193,11 @@ The output:
 
 * __layer__ (_string_ id, _function_ resultTester, _function_ dataPicker): ___Layer___
   ```js
+  /**
+   * @return the result will be passed to the pickMode method.
+   */
   resultTester = function(int rowOffset, int colOffset) {
-    return 0; // 0:pass, 1: failed
+    return 0;
   }
 
   dataPicker = function(int rowOffset, int colOffset) {
@@ -236,6 +212,66 @@ The output:
 ### Layer
 
 * __enabled__ (__boolean__ enabled)
+
+## Color System
+
+When you create a waferdata using __shotmap.data(101, 98, 1, 1, "leftdown", pickMode)__, the last argument `pickMode` will be be used to explain test result and pass `a new value` to the color selector. 
+
+The workflow likes: __layerResult__ >>> __pickMode method__ >>> __diePalette__.
+
+```js
+/**
+ * @value passed from pickMode method.
+ */
+var shotmap = uia.shotmap('wafer2')         
+    .diePalette(function(value) {
+        // pickMode: testing
+        switch (value) {
+            case 0: // green
+                return 0x00ff00;
+            case 1: // red
+                return 0xff0000;
+            case 2: // yellow
+                return 0xffff00;
+            case 3: // blue
+                return 0x0000ff;
+            default:
+                return 0xffffff;
+        }
+    });
+
+shotmap.data(101, 98, 1, 1, "leftdown", "testing")
+    .layer("1", layerResult1, layerData)
+    .layer("2", layerResult2, layerData);
+```
+
+The pickMode is one of follow:
+
+* testing - `/src/waferdata/testing.js`
+  
+  suppose the value from `layerResult` always be 0(good) or 1(failed).
+  
+  * -1: N/A
+  * 0: pass
+  * 1: failed
+  * 2: good - bad
+  * 3: good - good
+
+* counting - `/src/waferdata/counting.js` 
+
+  suppose the value from `layerResult` always be 0(good) or 1(failed), count the failed.
+
+  * -1: N/A
+  * 0: no failed dies
+  * 1~n: failed count
+
+* bincode - `/src/waferdata/bincode.js`
+
+  suppose the value from `layerResult` is __bin code__ where zero is good, others are bad. Check the example7.html.
+
+  * -1: N/A
+  * 0: all good
+  * 1~n: first none zero value(bin code)
 
 ## Known Issues
 1. notch (x, y) offset.
