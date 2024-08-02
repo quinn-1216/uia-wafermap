@@ -107,43 +107,20 @@ The output:
 
 ![example3](test/pages/example3.png)
 
+## Documentation
+### ShotMap
 
-### Example5
-Use some features of [OpenCV.js](https://docs.opencv.org/4.5.5/d5/d10/tutorial_js_root.html) to identify failed area.
-```js
-var shotmap = uia.shotmap('wafer2')
-    .size(600, 10)
-    .notch("down")
-    .wheel(false)
-    .drag(false)
-    .dieRect(false)                                 // turn off the grid line
-    .diePalette(function(value) {
-        switch (value) {
-            case 1:
-                return 0xff0000;
-            case 2:
-                return 0xff0000;
-            default:
-                return 0xffffff;                    // white background
-        }
-    });
+* __attachClick__ (_function_ clickHandler)
 
-shotmap.data(101, 98, 1, 1, "leftdown", "counting")
-    .layer("1", layerResult1, layerData)
-    .layer("2", layerResult2, layerData);
+  ```js
+  pickerFunc = function({
+    source: Die,
+    data: WaferData,
+    pick: function()
+  }) {
 
-shotmap.create(true);
-// try to find out failed areas.
-var result = shotmap.blocking(
-  7,                                                // blur argument
-  0xffffff);                                        // ignore white color (background)
-
-
-var canvas = document.getElementById("canvasOutput");
-result.draw(canvas);
-```
-
-
+  }
+  ```
 * __blocking__ (_int_ blur = 9, _int_ bg = null)
   * The blur argument of OpenCV.js.
   * The background color, ex: 0x00ff00. 
@@ -213,11 +190,11 @@ result.draw(canvas);
 
 * __enabled__ (__boolean__ enabled)
 
-## Color System
+## Layer and Color System
 
-When you create a waferdata using __shotmap.data(101, 98, 1, 1, "leftdown", pickMode)__, the last argument `pickMode` will be be used to explain test result and pass `a new value` to the color selector. 
+When you create a waferdata using __shotmap.data(101, 98, 1, 1, "leftdown", pickMode)__, the last argument `pickMode` is used to re-explain die results from all layers and return `a new meaning value` to the color selector. 
 
-The workflow likes: __layerResult__ >>> __pickMode method__ >>> __diePalette__.
+The workflow likes: __layerResult(*)__ >>> __pickMode method__ >>> __diePalette__.
 
 ```js
 /**
@@ -249,25 +226,27 @@ The pickMode is one of follow:
 
 * testing - `/src/waferdata/testing.js`
   
-  suppose the value from `layerResult` always be 0(good) or 1(failed).
+  The main scenario is used to show merged results of one wafer, and the value `layerResult` provides always be one of `-1`(NA), `0`(good) and `1`(failed). 
   
   * -1: N/A
   * 0: pass
-  * 1: failed
-  * 2: good - bad
+  * 1: bad
+  * 2: good - bad 
   * 3: good - good
 
 * counting - `/src/waferdata/counting.js` 
 
-  suppose the value from `layerResult` always be 0(good) or 1(failed), count the failed.
+  The main scenario is used to count failed number of multi wafers, and the value `layerResult` provides always be one of `-1`(NA), `0`(good) and `1`(failed). 
 
   * -1: N/A
-  * 0: no failed dies
+  * 0: no failed
   * 1~n: failed count
 
 * bincode - `/src/waferdata/bincode.js`
 
-  suppose the value from `layerResult` is __bin code__ where zero is good, others are bad. Check the example7.html.
+  The main scenario is used to display failed information, and the value `layerResult` provides will be `-1`(NA), `0`(good) or others number(failed bin code). 
+
+  Check the example7.html.
 
   * -1: N/A
   * 0: all good
